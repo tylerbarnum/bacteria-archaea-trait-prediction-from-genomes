@@ -1,5 +1,4 @@
 from itertools import groupby
-
 from typing import IO
 
 def fasta_iter(fasta_file : IO):

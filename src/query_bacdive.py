@@ -57,16 +57,21 @@ def paginated_query(
 
     The BacDive API limits to 100 queries per API call. This
     function chunks out a query accordingly.
+
+
+
     """
     results = {}
     chunk_size = 100 # BacDive API call limit
     chunks = round(len(query_list)/chunk_size)
     logging.info('Iniating {} queries in {} chunks'.format(len(query_list), chunks))
     for n_split in range(chunks):
-        client.result = {} # Refreshes queue for retrieve
+        
         l_idx = chunk_size * n_split
         r_idx = chunk_size * (n_split + 1)
         query = {query_type: query_list[l_idx:r_idx]}
+
+        client.result = {} # Refreshes queue for retrieve
         count = client.search(**query)
         for strain in client.retrieve():
             bacdive_id = strain['General']['BacDive-ID']
@@ -96,9 +101,9 @@ if __name__ == "__main__":
                     description='Scrapes BacDive API for all strain data'
                     )
     
+    parser.add_argument('-c', '--credentials', help='File with BacDive credentials as: 1st line username, 2nd line password')
     parser.add_argument('-min', default=0, help='Lowest BacDive ID to query', required=False)
     parser.add_argument('-max', help='Highest BacDive ID to query')
-    parser.add_argument('-c', '--credentials', help='File with BacDive credentials as: 1st line username, 2nd line password')
     parser.add_argument('-o', '--output', default='bacdive_data.json', help='Output JSON name')
 
     args = parser.parse_args()
