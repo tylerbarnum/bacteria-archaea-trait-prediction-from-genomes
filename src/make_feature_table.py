@@ -374,16 +374,3 @@ class MakeFeatureTable():
         return self.tsv_path
 
 
-
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(
-                prog='',
-                description=''
-                )
-    
-    parser.add_argument('-b', '--bacdive-json', help='JSON output of query_bacdive', required=True)
-
-    args = parser.parse_args()
-    
-    print(extract_features_from_bacdive_data(data_json=args.bacdive_json))

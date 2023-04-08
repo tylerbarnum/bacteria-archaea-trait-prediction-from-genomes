@@ -12,7 +12,7 @@ Contents of this repo allow:
 
 1. Programmatic access of BacDive data on growth conditions
 2. Derivation of genome properties based on protein amino acid and [LATER] nucleotide sequences. 
-3. [LATER] Feature engineering to support genome classification
+3. Feature engineering to support genome classification
 4. [LATER] Modeling training and evaluation with test/train split at high taxonomic levels
 5. [LATER] Prediction of optimum growth conditions using a pretrained model
 
@@ -38,7 +38,7 @@ To train a model from data from BacDive and the Genome Taxonomy Database, follow
 
 ### 1. Download genome data
 
-Download genomic data and metadata from the Genome Taxonomy Database
+Download genomic data and metadata from the Genome Taxonomy Database. Anticipate long downloads as the files are very large (~100G total uncompressed).
 
 ```shell
 GENOME_DIR=/path/to/data
@@ -56,11 +56,27 @@ wget https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/genomic_files_r
 
 Register with BacDive for access to the BacDive API at `https://api.bacdive.dsmz.de/`
 
-Run the `query_bacdive` module:
+Run the `query_bacdive` module (runtime: about 1 sec per 100 entries):
 
 ```shell
-
+python3 src/query_bacdive.py -c .bacdive_credentials -max 171000 -o data/bacdive_data.json
 ```
 
-### 3. 
+### 3. Creating the feature table
 
+[LATER] _Note to self: convert module into script_
+
+```shell
+# add instructions here
+```
+
+Features can be inspected using a Dash app. Currently variables are hard-coded, but this will run
+when called from the main directory if a subdirectory data has features file `./data/gtdb_v207_features_20230407.tsv`:
+
+```shell
+python3 src/app_feature_analysis.py
+```
+
+### 4. Training the model
+
+To be continued
