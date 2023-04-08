@@ -64,12 +64,10 @@ app.layout = html.Div(
         other abnormal features in the data, while portions of the data have promise. Use the heatmap to observe correlation strength
         at a glance, then inspect scatter plots in more detail for quality of correlation.
 
-        Sources of technical error include: assigning strains to different genomes within the same species, variable measurements of traits
-        across laboratories and time, incomplete measurement of traits (e.g. partial range).
+        Technical error includes: assigning strains to different genomes within the same species, variable measurements of traits
+        across laboratories, sampling bias.
 
         (i): To download an image, use the menu found by floating your mouse in the top right corner of either plot.
-
-        (i): _To-do: convert variable names into more easily readable names_
         """, style={'family' : 'helvetica'}),
 
         html.Div(className='ten rows', children=[

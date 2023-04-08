@@ -344,11 +344,6 @@ class MakeFeatureTable():
         to multiple strains. 
         """
         self.genomic_metadata = self.load_genomic_metadata(source='gtdb')
-        
-        # strain_accessions = set()
-        # for strain_id, data in self.trait_data.items():
-        #     trait_features = self.create_trait_features(data, source='bacdive')
-        #     strain_accessions.add(trait_features['ncbi_accession'])
 
         accession_dict = self.genomic_metadata.reset_index().set_index('ncbi_accession')['gtdb_genome_representative'].to_dict()
         
