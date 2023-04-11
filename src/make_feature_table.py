@@ -198,7 +198,6 @@ class BacDiveData():
         
 
 
-
 class MakeFeatureTable():
     """
     Creates feature table from genomic data and trait data.
@@ -213,10 +212,16 @@ class MakeFeatureTable():
         
         self.tsv_path = tsv_path
         self.genomic_metadata_paths = genomic_metadata
+        
         with open(trait_data) as fh:
+            logging.info('Loading trait data JSON')
             self.trait_data = json.loads(fh.read())
+            logging.info('Data loaded for {} strains'.format(len(self.trait_data.keys())))
+        
         with open(genomic_data) as fh:
+            logging.info('Loading genomic data JSON')
             self.genomic_data = json.loads(fh.read())
+            logging.info('Data loaded for {} genomes'.format(len(self.genomic_data.keys())))
         
         self.genomic_metadata = None
         self.genomic_features = None
@@ -230,7 +235,8 @@ class MakeFeatureTable():
         features = {}
         
         for protein_set in ['all', 'extracellular_soluble']:            
-            for k, v in data.items():
+            localized_data = data[protein_set]
+            for k, v in localized_data.items():
                 if k.startswith('histogram_'):
                     # Convert counts to frequency
                     total_counts = sum(v.values())
@@ -256,9 +262,15 @@ class MakeFeatureTable():
             'ncbi_accession' : strain.genome_accession_ncbi,
             'ncbi_taxid' : strain.taxid_ncbi,
             'strain_id' : strain.strain_id,
-            'optimum_ph' : strain.optimum_ph,
-            'optimum_temperature' : strain.optimum_temperature,
-            'midpoint_salinity' : strain.midpoint_salinity,
+            'ph_optimum' : strain.optimum_ph,
+            'temperature_optimum' : strain.optimum_temperature,
+            'salinity_midpoint' : strain.midpoint_salinity,
+            'salinity_min' : min(strain.reported_salinities, default=None),
+            'salinity_max' : max(strain.reported_salinities, default=None),
+            'ph_min': min(strain.reported_phs, default=None),
+            'ph_max': max(strain.reported_phs, default=None),
+            'temperature_min' : min(strain.reported_temperatures, default=None),
+            'temperature_max' : max(strain.reported_temperatures, default=None),
                    }
 
         features.update(self.onehot_range(strain.reported_salinities, 0, 38.4, 0.5, 'nacl_')) # salinity range
@@ -346,17 +358,19 @@ class MakeFeatureTable():
         self.genomic_metadata = self.load_genomic_metadata(source='gtdb')
 
         accession_dict = self.genomic_metadata.reset_index().set_index('ncbi_accession')['gtdb_genome_representative'].to_dict()
-        
+
+        n_strains = len(self.trait_data.keys())
         if self.features == None:
             self.features = {}
-            n = 0
-            for strain_id, data in self.trait_data.items():
+            for n, (strain_id, data) in enumerate(self.trait_data.items()):
+                if n % 5000 == 0:
+                    logging.info('Loading features for strain {}/{}'.format(n, n_strains))
                 strain_features = {}
                 trait_features = self.create_trait_features(data, source='bacdive')
                 representative_key = accession_dict.get(trait_features['ncbi_accession'], None)
-                if representative_key:
+                # Only proceed if strain has a matching genome
+                if representative_key: 
                     representative_metadata = self.genomic_metadata.loc[[representative_key]].head(1).to_dict(orient='records')[0] # first row if dup
-
                     strain_features.update(representative_metadata)
                     strain_features.update(self.create_genomic_features(self.genomic_data[representative_key]))
                     strain_features.update(trait_features)
@@ -365,7 +379,29 @@ class MakeFeatureTable():
         return self.features
     
     def write_feature_table(self):
-        pd.DataFrame.from_dict(self.load_features(), orient='index').to_csv(self.tsv_path, sep='\t', index=None)
+        logging.info('Creating and writing tab-separated table')
+        pd.DataFrame.from_dict(self.load_features(), orient='index').to_csv(self.tsv_path, sep='\t', index=None, compression='gzip')
         return self.tsv_path
 
+if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(
+                    prog='MakeFeatureTable',
+                    description='Joins data on strain traits (e.g. BacDive) and genomic data (from measure_genomic_properties)'
+                    )
+    
+    parser.add_argument('--strain-data', help='Data on strain traits (e.g. BacDive)')
+    parser.add_argument('--genomic-data', help='Data from genomes (from measure_genomic_properties)')
+    parser.add_argument('--genomic-metadata', help='Metadata on genomes in comma-separated list')
+    parser.add_argument('-o', '--output', help='Output TSV', default='data/feature_table.tsv.gz')
+    
+    args = parser.parse_args()
+    logging.basicConfig(format="%(levelname)s:%(message)s", encoding='utf-8', level=logging.INFO)
+
+    features = MakeFeatureTable(trait_data=Path(args.strain_data), 
+                                genomic_data=Path(args.genomic_data),
+                                genomic_metadata=[Path(tsv.replace(' ', '')) for tsv in args.genomic_metadata.split(',')],
+                                tsv_path=Path(args.output),
+                            )
+
+    features.write_feature_table()

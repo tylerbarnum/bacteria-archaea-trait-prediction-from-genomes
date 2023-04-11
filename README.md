@@ -34,9 +34,9 @@ To use a pre-trained model to predict traits for genomes ... [WORK IN PROGRESS]
 
 ## Training
 
-To train a model from data from BacDive and the Genome Taxonomy Database, follow these steps. For speed, this repo was node coded to use other datasets, so modifications to code would be needed to do so.
+To train a model from data from BacDive and the Genome Taxonomy Database, follow these steps. For quick development, this repo was not coded to use other datasets, so modifications to code would be needed to do so. All runtimes refer to a Macbook with 8 cores and 16G memory.
 
-### 1. Download genome data
+### 1. Download genomes
 
 Download genomic data and metadata from the Genome Taxonomy Database. Anticipate long downloads as the files are very large (~100G total uncompressed).
 
@@ -56,27 +56,35 @@ wget https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/genomic_files_r
 
 Register with BacDive for access to the BacDive API at `https://api.bacdive.dsmz.de/`
 
-Run the `query_bacdive` module (runtime: about 1 sec per 100 entries):
+Run the `query_bacdive` script (runtime: about 1 sec per 100 entries):
 
 ```shell
 python3 src/query_bacdive.py -c .bacdive_credentials -max 171000 -o data/bacdive_data.json
 ```
 
-### 3. Creating the feature table
+### 3. Measure properties from genomes
 
-[LATER] _Note to self: convert module into script_
+Run the `measure_genomic_properties` script to compute properties from each genome's proteins (runtime: several hours for 60,000 genomes).
 
 ```shell
-# add instructions here
+python3 src/measure_genomic_properties.py -faas ../data/gtdb_v207/protein_faa_reps/ -o data/gtdb_v207_genomic_properties.json
+```
+
+### 4. Create the feature table
+
+Run the `make_feature_table` script to join the BacDive data and genomic data created above into one set of features (runtime: <1 minute).
+
+```shell
+python3 src/make_feature_table.py --strain-data data/bacdive_data.json --genomic-data data/gtdb_v207_genomic_properties.json --genomic-metadata ../data/gtdb_v207/ar53_metadata_r207.tsv,../data/gtdb_v207/bac120_metadata_r207.tsv
 ```
 
 Features can be inspected using a Dash app. Currently variables are hard-coded, but this will run
-when called from the main directory if a subdirectory data has features file `./data/gtdb_v207_features_20230407.tsv`:
+when called from the main directory if a subdirectory data has features table `./data/feature_table.tsv.gz`:
 
 ```shell
 python3 src/app_feature_analysis.py
 ```
 
-### 4. Training the model
+### 5. Train the model
 
 To be continued
